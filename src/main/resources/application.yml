@@ -1,0 +1,90 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: web3-backend
+
+  # Database configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/web3_db
+    username: ${DB_USERNAME:web3_user}
+    password: ${DB_PASSWORD:web3_pass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Redis configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 60000ms
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 10
+          min-idle: 1
+          max-wait: -1ms
+
+  # Cache configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+
+# Web3 configuration
+web3:
+  ethereum:
+    node-url: ${ETH_NODE_URL:https://mainnet.infura.io/v3/your-project-id}
+    private-key: ${ETH_PRIVATE_KEY:your-private-key}
+    gas-price: 20000000000 # 20 Gwei
+    gas-limit: 6721975
+
+  polygon:
+    node-url: ${POLYGON_NODE_URL:https://polygon-mainnet.infura.io/v3/your-project-id}
+    private-key: ${POLYGON_PRIVATE_KEY:your-private-key}
+
+# JWT configuration
+jwt:
+  secret: ${JWT_SECRET:mySecretKey}
+  expiration: 86400000 # 24 hours
+
+# Logging
+logging:
+  level:
+    com.web3: DEBUG
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# API Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
