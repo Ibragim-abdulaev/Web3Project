@@ -61,7 +61,6 @@ public class Wallet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Constructors
     public Wallet() {}
 
     public Wallet(String address, NetworkType network, User user) {
@@ -70,7 +69,6 @@ public class Wallet {
         this.user = user;
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -107,7 +105,6 @@ public class Wallet {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    // Enum for network types
     public enum NetworkType {
         ETHEREUM,
         POLYGON,
