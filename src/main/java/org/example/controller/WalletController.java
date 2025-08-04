@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.entity.User;
 import org.example.entity.Wallet;
+import org.example.service.TransactionService;
+import org.example.service.UserService;
 import org.example.service.WalletService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -7,7 +7,6 @@ spring:
   application:
     name: web3-backend
 
-  # Database configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/web3_db
     username: postgres
@@ -20,10 +19,9 @@ spring:
     show-sql: false
     properties:
       hibernate:
-      dialect: org.hibernate.dialect.PostgreSQLDialect
-      format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
 
-  # Redis configuration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -38,30 +36,26 @@ spring:
           min-idle: 1
           max-wait: -1ms
 
-  # Cache configuration
   cache:
     type: redis
     redis:
       time-to-live: 600000
 
-# Web3 configuration
 web3:
   ethereum:
     node-url: ${ETH_NODE_URL:https://mainnet.infura.io/v3/your-project-id}
-    private-key: ${ETH_PRIVATE_KEY:your-private-key}
-    gas-price: 20000000000 # 20 Gwei
+    private-key: 0xabc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abcd
+    gas-price: 20000000000
     gas-limit: 6721975
 
   polygon:
     node-url: ${POLYGON_NODE_URL:https://polygon-mainnet.infura.io/v3/your-project-id}
-    private-key: ${POLYGON_PRIVATE_KEY:your-private-key}
+    private-key: 0x4c0883a69102937d62341473fca78b09b34c99a6b7ed7d6ca476e5ee0382a05e
 
-# JWT configuration
 jwt:
   secret: ${JWT_SECRET:mySecretKey}
-  expiration: 86400000 # 24 hours
+  expiration: 86400000
 
-# Logging
 logging:
   level:
     com.web3: DEBUG
@@ -71,7 +65,6 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# API Documentation
 springdoc:
   api-docs:
     path: /api-docs
@@ -79,7 +72,6 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
 
-# Management endpoints
 management:
   endpoints:
     web:

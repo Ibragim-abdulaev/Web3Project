@@ -63,14 +63,19 @@ public class SecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests((authz) -> authz
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/wallets/*/balance").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/wallets/*/transfer").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/nft/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/nft/**").authenticated()
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/actuator/**",
+                                "/api/v1/auth/**",
+                                "/api/v1/public/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/wallets/*/balance").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/wallets/*/transfer").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/nft/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/nft/**").authenticated()
                         .anyRequest().authenticated()
                 );
 
