@@ -2,7 +2,6 @@ package org.example.config;
 
 import org.example.security.JwtAuthenticationEntryPoint;
 import org.example.security.JwtAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,6 +11,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,7 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -30,14 +29,27 @@ import java.util.List;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserDetailsService userDetailsService;
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private static final String[] PUBLIC_ENDPOINTS = {
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/api-docs/**",
+        "/actuator/**",
+        "/api/v1/auth/**",
+        "/api/v1/public/**"
+    };
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+    public SecurityConfig(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                          JwtAuthenticationFilter jwtAuthenticationFilter,
+                          UserDetailsService userDetailsService) {
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.userDetailsService = userDetailsService;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -59,28 +71,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
-                .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                .authorizeHttpRequests((authz) -> authz
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api-docs/**",
-                                "/actuator/**",
-                                "/api/v1/auth/**",
-                                "/api/v1/public/**"
-                        ).permitAll()
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .exceptionHandling(eh -> eh.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/wallets/*/balance").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/wallets/*/transfer").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/nft/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/nft/**").authenticated()
                         .anyRequest().authenticated()
-                );
-
-        http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -89,9 +91,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PUT", "DELETE", "PATCH"));
+        configuration.setAllowedMethods(List.of("HEAD", "GET", "POST", "PUT", "DELETE", "PATCH"));
         configuration.setAllowCredentials(true);
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
