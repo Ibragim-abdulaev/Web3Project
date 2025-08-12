@@ -2,7 +2,14 @@ package org.example.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.example.entity.User;
 import org.example.entity.Wallet;
 import org.example.service.TransactionService;
@@ -10,20 +17,14 @@ import org.example.service.UserService;
 import org.example.service.WalletService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -33,223 +34,131 @@ public class WalletController {
 
     private static final Logger logger = LoggerFactory.getLogger(WalletController.class);
 
-    @Autowired
-    private WalletService walletService;
+    private final WalletService walletService;
+    private final TransactionService transactionService;
+    private final UserService userService;
 
-    @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private UserService userService;
+    public WalletController(WalletService walletService,
+                            TransactionService transactionService,
+                            UserService userService) {
+        this.walletService = walletService;
+        this.transactionService = transactionService;
+        this.userService = userService;
+    }
 
     @GetMapping("/my")
     @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Get current user's wallets", description = "Retrieve all wallets belonging to the authenticated user")
+    @Operation(summary = "Get current user's wallets")
     public ResponseEntity<?> getMyWallets(Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            User user = userService.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            List<Wallet> wallets = walletService.findByUserId(user.getId());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("wallets", wallets);
-            response.put("count", wallets.size());
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            logger.error("Error getting user wallets", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to retrieve wallets: " + e.getMessage()));
-        }
+        User user = getUser(authentication);
+        List<Wallet> wallets = walletService.findByUserId(user.getId());
+        return ResponseEntity.ok(Map.of(
+                "wallets", wallets,
+                "count", wallets.size()
+        ));
     }
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Create new wallet", description = "Create a new crypto wallet for the authenticated user")
-    public ResponseEntity<?> createWallet(
-            @RequestBody @Valid CreateWalletRequest request,
-            Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            User user = userService.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            Wallet wallet = walletService.createWallet(user, request.getNetwork());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("wallet", wallet);
-            response.put("message", "Wallet created successfully");
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-        } catch (Exception e) {
-            logger.error("Error creating wallet", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create wallet: " + e.getMessage()));
-        }
+    @Operation(summary = "Create new wallet")
+    public ResponseEntity<?> createWallet(@RequestBody @Valid CreateWalletRequest request,
+                                          Authentication authentication) {
+        User user = getUser(authentication);
+        Wallet wallet = walletService.createWallet(user, request.getNetwork());
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "wallet", wallet,
+                "message", "Wallet created successfully"
+        ));
     }
 
     @GetMapping("/{address}/balance")
-    @Operation(summary = "Get wallet balance", description = "Get the current balance of a wallet")
+    @Operation(summary = "Get wallet balance")
     public ResponseEntity<?> getBalance(
             @Parameter(description = "Wallet address") @PathVariable String address,
             @Parameter(description = "Network type") @RequestParam Wallet.NetworkType network) {
-        try {
-            if (!walletService.isValidAddress(address)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid wallet address"));
-            }
 
-            BigDecimal balance = walletService.getBalance(address, network);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("address", address);
-            response.put("balance", balance);
-            response.put("network", network);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            logger.error("Error getting balance for address: {}", address, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get balance: " + e.getMessage()));
+        if (!walletService.isValidAddress(address)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid wallet address"));
         }
+
+        BigDecimal balance = walletService.getBalance(address, network);
+        return ResponseEntity.ok(Map.of(
+                "address", address,
+                "balance", balance,
+                "network", network
+        ));
     }
 
     @PostMapping("/{address}/transfer")
     @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Send transaction", description = "Send cryptocurrency from one wallet to another")
+    @Operation(summary = "Send transaction")
     public ResponseEntity<?> sendTransaction(
-            @Parameter(description = "Sender wallet address") @PathVariable String address,
+            @PathVariable String address,
             @RequestBody @Valid TransferRequest request,
-            Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            User user = userService.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            Authentication authentication) throws Exception {
 
-            Optional<Wallet> walletOpt = walletService.findByAddress(address);
-            if (!walletOpt.isPresent() || !walletOpt.get().getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "Wallet access denied"));
-            }
+        User user = getUser(authentication);
+        Wallet wallet = getOwnedWalletOrThrow(address, user);
 
-            Wallet wallet = walletOpt.get();
+        String txHash = transactionService.sendTransaction(
+                address,
+                request.getToAddress(),
+                request.getAmount(),
+                request.getNetwork(),
+                wallet.getPrivateKey()
+        ).get();
 
-            CompletableFuture<String> txHashFuture = transactionService.sendTransaction(
-                    address,
-                    request.getToAddress(),
-                    request.getAmount(),
-                    request.getNetwork(),
-                    wallet.getPrivateKey()
-            );
-
-            String txHash = txHashFuture.get();
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("transactionHash", txHash);
-            response.put("fromAddress", address);
-            response.put("toAddress", request.getToAddress());
-            response.put("amount", request.getAmount());
-            response.put("network", request.getNetwork());
-            response.put("message", "Transaction sent successfully");
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            logger.error("Error sending transaction", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to send transaction: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(Map.of(
+                "transactionHash", txHash,
+                "fromAddress", address,
+                "toAddress", request.getToAddress(),
+                "amount", request.getAmount(),
+                "network", request.getNetwork(),
+                "message", "Transaction sent successfully"
+        ));
     }
 
     @GetMapping("/{address}")
-    @Operation(summary = "Get wallet details", description = "Get detailed information about a wallet")
+    @Operation(summary = "Get wallet details")
     public ResponseEntity<?> getWalletDetails(@PathVariable String address) {
-        try {
-            Optional<Wallet> walletOpt = walletService.findByAddress(address);
-            if (!walletOpt.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
+        Wallet wallet = walletService.findByAddress(address)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
-            Wallet wallet = walletOpt.get();
-
-            BigDecimal balance = walletService.getBalance(address, wallet.getNetwork());
-
-            BigDecimal totalSent = transactionService.getTotalSentAmount(address);
-            BigDecimal totalReceived = transactionService.getTotalReceivedAmount(address);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("address", wallet.getAddress());
-            response.put("network", wallet.getNetwork());
-            response.put("balance", balance);
-            response.put("isActive", wallet.getIsActive());
-            response.put("createdAt", wallet.getCreatedAt());
-            response.put("totalSent", totalSent);
-            response.put("totalReceived", totalReceived);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            logger.error("Error getting wallet details for address: {}", address, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get wallet details: " + e.getMessage()));
-        }
+        BigDecimal balance = walletService.getBalance(address, wallet.getNetwork());
+        return ResponseEntity.ok(Map.of(
+                "address", wallet.getAddress(),
+                "network", wallet.getNetwork(),
+                "balance", balance,
+                "isActive", wallet.getIsActive(),
+                "createdAt", wallet.getCreatedAt(),
+                "totalSent", transactionService.getTotalSentAmount(address),
+                "totalReceived", transactionService.getTotalReceivedAmount(address)
+        ));
     }
 
     @PutMapping("/{address}/deactivate")
     @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Deactivate wallet", description = "Deactivate a wallet (soft delete)")
-    public ResponseEntity<?> deactivateWallet(
-            @PathVariable String address,
-            Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            User user = userService.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            Optional<Wallet> walletOpt = walletService.findByAddress(address);
-            if (!walletOpt.isPresent() || !walletOpt.get().getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "Wallet access denied"));
-            }
-
-            walletService.deactivateWallet(address);
-
-            return ResponseEntity.ok(Map.of("message", "Wallet deactivated successfully"));
-
-        } catch (Exception e) {
-            logger.error("Error deactivating wallet: {}", address, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to deactivate wallet: " + e.getMessage()));
-        }
+    @Operation(summary = "Deactivate wallet")
+    public ResponseEntity<?> deactivateWallet(@PathVariable String address,
+                                              Authentication authentication) {
+        User user = getUser(authentication);
+        getOwnedWalletOrThrow(address, user);
+        walletService.deactivateWallet(address);
+        return ResponseEntity.ok(Map.of("message", "Wallet deactivated successfully"));
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "Get wallet statistics", description = "Get overall wallet statistics")
+    @Operation(summary = "Get wallet statistics")
     public ResponseEntity<?> getWalletStats() {
-        try {
-            Map<String, Object> stats = new HashMap<>();
-
-            for (Wallet.NetworkType network : Wallet.NetworkType.values()) {
-                Long count = walletService.getWalletCountByNetwork(network);
-                stats.put(network.name().toLowerCase() + "Count", count);
-            }
-
-            return ResponseEntity.ok(stats);
-
-        } catch (Exception e) {
-            logger.error("Error getting wallet stats", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get wallet stats: " + e.getMessage()));
+        Map<String, Object> stats = new HashMap<>();
+        for (Wallet.NetworkType network : Wallet.NetworkType.values()) {
+            stats.put(network.name().toLowerCase() + "Count", walletService.getWalletCountByNetwork(network));
         }
+        return ResponseEntity.ok(stats);
     }
 
     public static class CreateWalletRequest {
-        @NotBlank
+        @NotNull(message = "Network type is required")
         private Wallet.NetworkType network;
 
         public Wallet.NetworkType getNetwork() { return network; }
@@ -257,11 +166,14 @@ public class WalletController {
     }
 
     public static class TransferRequest {
-        @NotBlank
+        @NotBlank(message = "Destination address is required")
         private String toAddress;
 
+        @NotNull(message = "Amount is required")
+        @DecimalMin(value = "0.00000001", message = "Amount must be greater than zero")
         private BigDecimal amount;
 
+        @NotNull(message = "Network type is required")
         private Wallet.NetworkType network;
 
         public String getToAddress() { return toAddress; }
@@ -272,5 +184,16 @@ public class WalletController {
 
         public Wallet.NetworkType getNetwork() { return network; }
         public void setNetwork(Wallet.NetworkType network) { this.network = network; }
+    }
+
+    private User getUser(Authentication authentication) {
+        return userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private Wallet getOwnedWalletOrThrow(String address, User user) {
+        return walletService.findByAddress(address)
+                .filter(w -> w.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new RuntimeException("Wallet access denied"));
     }
 }

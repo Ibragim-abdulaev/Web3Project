@@ -60,37 +60,31 @@ public class WalletService {
         return walletRepository.findByUserIdAndIsActive(userId, true);
     }
 
-    public Wallet createWallet(User user, Wallet.NetworkType network) throws Exception {
+    public Wallet createWallet(User user, Wallet.NetworkType network) {
         logger.info("Creating new wallet for user: {} on network: {}", user.getUsername(), network);
 
-        try {
-            String privateKey = generatePrivateKey();
-            Credentials credentials = Credentials.create(privateKey);
-            String address = credentials.getAddress();
+        String privateKey = generatePrivateKey();
+        Credentials credentials = Credentials.create(privateKey);
+        String address = credentials.getAddress();
 
-            if (walletRepository.existsByAddress(address)) {
-                throw new RuntimeException("Wallet with this address already exists");
-            }
-
-            Wallet wallet = new Wallet();
-            wallet.setAddress(address);
-            wallet.setPrivateKey(privateKey);
-            wallet.setNetwork(network);
-            wallet.setUser(user);
-            wallet.setIsActive(true);
-            wallet.setBalance(BigDecimal.ZERO);
-
-            Wallet savedWallet = walletRepository.save(wallet);
-            logger.info("Wallet created successfully: {}", address);
-
-            clearUserWalletsCache(user.getId());
-
-            return savedWallet;
-
-        } catch (Exception e) {
-            logger.error("Error creating wallet for user: {}", user.getUsername(), e);
-            throw new RuntimeException("Failed to create wallet: " + e.getMessage());
+        if (walletRepository.existsByAddress(address)) {
+            logger.warn("Wallet creation failed — address already exists: {}", address);
+            throw new WalletCreationException("Wallet with this address already exists");
         }
+
+        Wallet wallet = new Wallet();
+        wallet.setAddress(address);
+        wallet.setPrivateKey(privateKey);
+        wallet.setNetwork(network);
+        wallet.setUser(user);
+        wallet.setIsActive(true);
+        wallet.setBalance(BigDecimal.ZERO);
+
+        Wallet savedWallet = walletRepository.save(wallet);
+        logger.info("Wallet created successfully: {}", address);
+
+        clearUserWalletsCache(user.getId());
+        return savedWallet;
     }
 
     @Cacheable(value = "wallets", key = "'balance_' + #address")
