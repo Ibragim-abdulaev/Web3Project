@@ -16,10 +16,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
   data:
@@ -53,7 +52,7 @@ web3:
     private-key: 0x4c0883a69102937d62341473fca78b09b34c99a6b7ed7d6ca476e5ee0382a05e
 
 jwt:
-  secret: ${JWT_SECRET:mySecretKey}
+  secret: N3f9K2xV7pL1sQ8dM5tR0vZ4yB6hW3jF9aC2nP7qS1eL8mX0
   expiration: 86400000
 
 logging:

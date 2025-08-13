@@ -3,6 +3,8 @@ package org.example.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,6 +13,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
+@Getter
+@Setter
 public class Transaction {
 
     @Id
@@ -109,78 +113,6 @@ public class Transaction {
         this.network = network;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getHash() { return hash; }
-    public void setHash(String hash) { this.hash = hash; }
-
-    public Wallet getFromWallet() { return fromWallet; }
-    public void setFromWallet(Wallet fromWallet) { this.fromWallet = fromWallet; }
-
-    public Wallet getToWallet() { return toWallet; }
-    public void setToWallet(Wallet toWallet) { this.toWallet = toWallet; }
-
-    public String getFromAddress() { return fromAddress; }
-    public void setFromAddress(String fromAddress) { this.fromAddress = fromAddress; }
-
-    public String getToAddress() { return toAddress; }
-    public void setToAddress(String toAddress) { this.toAddress = toAddress; }
-
-    public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
-
-    public BigDecimal getGasPrice() { return gasPrice; }
-    public void setGasPrice(BigDecimal gasPrice) { this.gasPrice = gasPrice; }
-
-    public BigDecimal getGasUsed() { return gasUsed; }
-    public void setGasUsed(BigDecimal gasUsed) { this.gasUsed = gasUsed; }
-
-    public BigDecimal getGasFee() { return gasFee; }
-    public void setGasFee(BigDecimal gasFee) { this.gasFee = gasFee; }
-
-    public TransactionStatus getStatus() { return status; }
-    public void setStatus(TransactionStatus status) { this.status = status; }
-
-    public TransactionType getType() { return type; }
-    public void setType(TransactionType type) { this.type = type; }
-
-    public Wallet.NetworkType getNetwork() { return network; }
-    public void setNetwork(Wallet.NetworkType network) { this.network = network; }
-
-    public Long getBlockNumber() { return blockNumber; }
-    public void setBlockNumber(Long blockNumber) { this.blockNumber = blockNumber; }
-
-    public String getBlockHash() { return blockHash; }
-    public void setBlockHash(String blockHash) { this.blockHash = blockHash; }
-
-    public Integer getConfirmationCount() { return confirmationCount; }
-    public void setConfirmationCount(Integer confirmationCount) { this.confirmationCount = confirmationCount; }
-
-    public String getContractAddress() { return contractAddress; }
-    public void setContractAddress(String contractAddress) { this.contractAddress = contractAddress; }
-
-    public String getTokenSymbol() { return tokenSymbol; }
-    public void setTokenSymbol(String tokenSymbol) { this.tokenSymbol = tokenSymbol; }
-
-    public Integer getTokenDecimals() { return tokenDecimals; }
-    public void setTokenDecimals(Integer tokenDecimals) { this.tokenDecimals = tokenDecimals; }
-
-    public String getData() { return data; }
-    public void setData(String data) { this.data = data; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    public LocalDateTime getBlockchainTimestamp() { return blockchainTimestamp; }
-    public void setBlockchainTimestamp(LocalDateTime blockchainTimestamp) { this.blockchainTimestamp = blockchainTimestamp; }
-
     public enum TransactionStatus {
         PENDING,
         CONFIRMED,
@@ -190,11 +122,7 @@ public class Transaction {
 
     public enum TransactionType {
         TRANSFER,
-        CONTRACT_CALL,
-        CONTRACT_DEPLOYMENT,
-        NFT_MINT,
-        NFT_TRANSFER,
-        TOKEN_TRANSFER,
-        SWAP
+        DEPOSIT,
+        WITHDRAWAL
     }
 }

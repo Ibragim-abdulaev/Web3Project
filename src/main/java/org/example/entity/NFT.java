@@ -3,6 +3,8 @@ package org.example.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,6 +13,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "nfts")
+@Getter
+@Setter
 public class NFT {
 
     @Id
@@ -120,96 +124,6 @@ public class NFT {
         this.network = network;
         this.ownerAddress = ownerAddress;
     }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getTokenId() { return tokenId; }
-    public void setTokenId(String tokenId) { this.tokenId = tokenId; }
-
-    public String getContractAddress() { return contractAddress; }
-    public void setContractAddress(String contractAddress) { this.contractAddress = contractAddress; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public String getExternalUrl() { return externalUrl; }
-    public void setExternalUrl(String externalUrl) { this.externalUrl = externalUrl; }
-
-    public String getMetadataUri() { return metadataUri; }
-    public void setMetadataUri(String metadataUri) { this.metadataUri = metadataUri; }
-
-    public String getMetadata() { return metadata; }
-    public void setMetadata(String metadata) { this.metadata = metadata; }
-
-    public Wallet.NetworkType getNetwork() { return network; }
-    public void setNetwork(Wallet.NetworkType network) { this.network = network; }
-
-    public Wallet getWallet() { return wallet; }
-    public void setWallet(Wallet wallet) { this.wallet = wallet; }
-
-    public String getOwnerAddress() { return ownerAddress; }
-    public void setOwnerAddress(String ownerAddress) { this.ownerAddress = ownerAddress; }
-
-    public String getCreatorAddress() { return creatorAddress; }
-    public void setCreatorAddress(String creatorAddress) { this.creatorAddress = creatorAddress; }
-
-    public String getCollectionName() { return collectionName; }
-    public void setCollectionName(String collectionName) { this.collectionName = collectionName; }
-
-    public String getCollectionSymbol() { return collectionSymbol; }
-    public void setCollectionSymbol(String collectionSymbol) { this.collectionSymbol = collectionSymbol; }
-
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-
-    public String getCurrency() { return currency; }
-    public void setCurrency(String currency) { this.currency = currency; }
-
-    public Boolean getIsForSale() { return isForSale; }
-    public void setIsForSale(Boolean isForSale) { this.isForSale = isForSale; }
-
-    public BigDecimal getRoyaltyPercentage() { return royaltyPercentage; }
-    public void setRoyaltyPercentage(BigDecimal royaltyPercentage) { this.royaltyPercentage = royaltyPercentage; }
-
-    public String getRoyaltyRecipient() { return royaltyRecipient; }
-    public void setRoyaltyRecipient(String royaltyRecipient) { this.royaltyRecipient = royaltyRecipient; }
-
-    public TokenStandard getStandard() { return standard; }
-    public void setStandard(TokenStandard standard) { this.standard = standard; }
-
-    public Integer getRarityRank() { return rarityRank; }
-    public void setRarityRank(Integer rarityRank) { this.rarityRank = rarityRank; }
-
-    public BigDecimal getRarityScore() { return rarityScore; }
-    public void setRarityScore(BigDecimal rarityScore) { this.rarityScore = rarityScore; }
-
-    public BigDecimal getLastSalePrice() { return lastSalePrice; }
-    public void setLastSalePrice(BigDecimal lastSalePrice) { this.lastSalePrice = lastSalePrice; }
-
-    public LocalDateTime getLastSaleDate() { return lastSaleDate; }
-    public void setLastSaleDate(LocalDateTime lastSaleDate) { this.lastSaleDate = lastSaleDate; }
-
-    public Long getViewCount() { return viewCount; }
-    public void setViewCount(Long viewCount) { this.viewCount = viewCount; }
-
-    public Long getLikeCount() { return likeCount; }
-    public void setLikeCount(Long likeCount) { this.likeCount = likeCount; }
-
-    public Boolean getIsVerified() { return isVerified; }
-    public void setIsVerified(Boolean isVerified) { this.isVerified = isVerified; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public enum TokenStandard {
         ERC721,

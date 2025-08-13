@@ -2,9 +2,6 @@ package org.example.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -24,8 +21,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/wallets")
@@ -62,7 +63,7 @@ public class WalletController {
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Create new wallet")
     public ResponseEntity<?> createWallet(@RequestBody @Valid CreateWalletRequest request,
-                                          Authentication authentication) {
+                                          Authentication authentication) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         User user = getUser(authentication);
         Wallet wallet = walletService.createWallet(user, request.getNetwork());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(

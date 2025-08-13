@@ -3,6 +3,8 @@ package org.example.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,6 +15,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "wallets")
+@Getter
+@Setter
 public class Wallet {
 
     @Id
@@ -68,42 +72,6 @@ public class Wallet {
         this.network = network;
         this.user = user;
     }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-
-    public String getPrivateKey() { return privateKey; }
-    public void setPrivateKey(String privateKey) { this.privateKey = privateKey; }
-
-    public BigDecimal getBalance() { return balance; }
-    public void setBalance(BigDecimal balance) { this.balance = balance; }
-
-    public NetworkType getNetwork() { return network; }
-    public void setNetwork(NetworkType network) { this.network = network; }
-
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-
-    public Set<Transaction> getSentTransactions() { return sentTransactions; }
-    public void setSentTransactions(Set<Transaction> sentTransactions) { this.sentTransactions = sentTransactions; }
-
-    public Set<Transaction> getReceivedTransactions() { return receivedTransactions; }
-    public void setReceivedTransactions(Set<Transaction> receivedTransactions) { this.receivedTransactions = receivedTransactions; }
-
-    public Set<NFT> getNfts() { return nfts; }
-    public void setNfts(Set<NFT> nfts) { this.nfts = nfts; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public enum NetworkType {
         ETHEREUM,

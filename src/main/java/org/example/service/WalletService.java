@@ -2,6 +2,7 @@ package org.example.service;
 
 import org.example.entity.User;
 import org.example.entity.Wallet;
+import org.example.exception.WalletCreationException;
 import org.example.repository.WalletRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,7 @@ public class WalletService {
         return walletRepository.findByUserIdAndIsActive(userId, true);
     }
 
-    public Wallet createWallet(User user, Wallet.NetworkType network) {
+    public Wallet createWallet(User user, Wallet.NetworkType network) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         logger.info("Creating new wallet for user: {} on network: {}", user.getUsername(), network);
 
         String privateKey = generatePrivateKey();
