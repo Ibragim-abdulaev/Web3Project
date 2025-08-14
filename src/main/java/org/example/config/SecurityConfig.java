@@ -75,11 +75,21 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .exceptionHandling(eh -> eh.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/wallets/*/balance").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/wallets/*/transfer").authenticated()
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(authz -> {
+                            try {
+                                authz
+                                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/wallets/*/balance").authenticated()
+                                        .requestMatchers(HttpMethod.POST, "/api/v1/wallets/*/transfer").authenticated()
+                                        .anyRequest().authenticated()
+                                        .and()
+                                        .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                                        .and()
+                                        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
