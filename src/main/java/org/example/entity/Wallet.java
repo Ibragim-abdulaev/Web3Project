@@ -14,7 +14,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "wallets")
+@Table(name = "wallets", indexes = {
+        @Index(name = "idx_wallet_address", columnList = "address"),
+        @Index(name = "idx_wallet_user", columnList = "user_id"),
+        @Index(name = "idx_wallet_network", columnList = "network"),
+        @Index(name = "idx_wallet_active", columnList = "is_active")
+})
 @Getter
 @Setter
 public class Wallet {
@@ -27,9 +32,13 @@ public class Wallet {
     @Column(name = "address", unique = true, nullable = false)
     private String address;
 
-    @Column(name = "private_key")
+    @Column(name = "encrypted_private_key")
     @JsonIgnore
-    private String privateKey;
+    private String encryptedPrivateKey;
+
+    @Column(name = "encryption_iv")
+    @JsonIgnore
+    private String encryptionIv;
 
     @Column(name = "balance", precision = 36, scale = 18)
     private BigDecimal balance = BigDecimal.ZERO;
@@ -40,6 +49,25 @@ public class Wallet {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "wallet_type", nullable = false)
+    private WalletType walletType = WalletType.HOT;
+
+    @Column(name = "daily_limit", precision = 36, scale = 18)
+    private BigDecimal dailyLimit;
+
+    @Column(name = "daily_spent", precision = 36, scale = 18)
+    private BigDecimal dailySpent = BigDecimal.ZERO;
+
+    @Column(name = "daily_limit_reset_date")
+    private LocalDateTime dailyLimitResetDate;
+
+    @Column(name = "label")
+    private String label;
+
+    @Column(name = "description")
+    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -57,6 +85,12 @@ public class Wallet {
     @JsonIgnore
     private Set<NFT> nfts = new HashSet<>();
 
+    @Column(name = "last_used_at")
+    private LocalDateTime lastUsedAt;
+
+    @Column(name = "transaction_count", nullable = false)
+    private Long transactionCount = 0L;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -73,12 +107,60 @@ public class Wallet {
         this.user = user;
     }
 
+    public enum WalletType {
+        HOT,
+        WATCH,
+        HARDWARE,
+        IMPORTED
+    }
+
     public enum NetworkType {
-        ETHEREUM,
-        POLYGON,
-        BINANCE_SMART_CHAIN,
-        AVALANCHE,
-        ARBITRUM,
-        OPTIMISM
+        ETHEREUM("ETH", 18),
+        POLYGON("MATIC", 18),
+        BINANCE_SMART_CHAIN("BNB", 18),
+        AVALANCHE("AVAX", 18),
+        ARBITRUM("ETH", 18),
+        OPTIMISM("ETH", 18);
+
+        private final String nativeCurrency;
+        private final int decimals;
+
+        NetworkType(String nativeCurrency, int decimals) {
+            this.nativeCurrency = nativeCurrency;
+            this.decimals = decimals;
+        }
+
+        public String getNativeCurrency() { return nativeCurrency; }
+        public int getDecimals() { return decimals; }
+    }
+
+    public void incrementTransactionCount() {
+        this.transactionCount++;
+        this.lastUsedAt = LocalDateTime.now();
+    }
+
+    public boolean isWithinDailyLimit(BigDecimal amount) {
+        if (dailyLimit == null) return true;
+
+        resetDailyLimitIfNeeded();
+        return dailySpent.add(amount).compareTo(dailyLimit) <= 0;
+    }
+
+    public void addToDailySpent(BigDecimal amount) {
+        resetDailyLimitIfNeeded();
+        this.dailySpent = this.dailySpent.add(amount);
+    }
+
+    private void resetDailyLimitIfNeeded() {
+        LocalDateTime now = LocalDateTime.now();
+        if (dailyLimitResetDate == null || now.isAfter(dailyLimitResetDate)) {
+            this.dailySpent = BigDecimal.ZERO;
+            this.dailyLimitResetDate = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        }
+    }
+
+    public String getDisplayName() {
+        return label != null && !label.isEmpty() ? label :
+                address.substring(0, 6) + "..." + address.substring(address.length() - 4);
     }
 }

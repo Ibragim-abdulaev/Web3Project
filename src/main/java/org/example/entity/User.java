@@ -18,6 +18,9 @@ import java.util.Set;
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "username"),
         @UniqueConstraint(columnNames = "email")
+}, indexes = {
+        @Index(name = "idx_user_wallet", columnList = "primary_wallet_address"),
+        @Index(name = "idx_user_verified", columnList = "is_verified")
 })
 @Getter
 @Setter
@@ -28,7 +31,7 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Size(max = 20)
+    @Size(max = 50)
     private String username;
 
     @NotBlank
@@ -36,19 +39,27 @@ public class User {
     @Email
     private String email;
 
-    @NotBlank
     @Size(max = 120)
     @JsonIgnore
     private String password;
 
-    @Column(name = "wallet_address")
-    private String walletAddress;
+    @Column(name = "primary_wallet_address")
+    private String primaryWalletAddress;
 
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified = false;
 
     @Column(name = "verification_token")
     private String verificationToken;
+
+    @Column(name = "display_name")
+    private String displayName;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(name = "bio", length = 500)
+    private String bio;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
@@ -67,6 +78,45 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "profile_public", nullable = false)
+    private Boolean profilePublic = true;
+
+    @Column(name = "show_balance", nullable = false)
+    private Boolean showBalance = false;
+
+    @Column(name = "two_factor_enabled", nullable = false)
+    private Boolean twoFactorEnabled = false;
+
+    @Column(name = "two_factor_secret")
+    @JsonIgnore
+    private String twoFactorSecret;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
+    @Column(name = "login_count", nullable = false)
+    private Long loginCount = 0L;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private UserStatus status = UserStatus.ACTIVE;
+
+    public boolean isWalletOnlyUser() {
+        return password == null || password.isEmpty();
+    }
+
+    public void incrementLoginCount() {
+        this.loginCount++;
+        this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public enum UserStatus {
+        ACTIVE,
+        SUSPENDED,
+        BANNED,
+        DELETED
+    }
 
     public User() {}
 

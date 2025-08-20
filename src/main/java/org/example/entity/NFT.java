@@ -1,5 +1,6 @@
 package org.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,14 +8,28 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.validator.constraints.URL;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
-@Table(name = "nfts")
+@Table(name = "nfts", indexes = {
+        @Index(name = "idx_nft_owner", columnList = "owner_address"),
+        @Index(name = "idx_nft_contract", columnList = "contract_address"),
+        @Index(name = "idx_nft_collection", columnList = "collection_name"),
+        @Index(name = "idx_nft_sale", columnList = "is_for_sale"),
+        @Index(name = "idx_nft_network", columnList = "network"),
+        @Index(name = "idx_nft_rarity", columnList = "rarity_rank")
+})
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class NFT {
 
     @Id
@@ -35,14 +50,28 @@ public class NFT {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @URL(message = "Invalid image URL format")
     @Column(name = "image_url")
     private String imageUrl;
 
+    @URL(message = "Invalid external URL format")
     @Column(name = "external_url")
     private String externalUrl;
 
+    @URL(message = "Invalid metadata URI format")
     @Column(name = "metadata_uri")
     private String metadataUri;
+
+    @OneToMany(mappedBy = "nft", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Set<NFTOwnershipHistory> ownershipHistory = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "nft_attributes",
+            joinColumns = @JoinColumn(name = "nft_id"))
+    @MapKeyColumn(name = "trait_type")
+    @Column(name = "trait_value")
+    private Map<String, String> attributes = new HashMap<>();
 
     @Column(name = "metadata", columnDefinition = "TEXT")
     private String metadata;
@@ -116,6 +145,10 @@ public class NFT {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status")
+    private ModerationStatus moderationStatus = ModerationStatus.PENDING;
+
     public NFT() {}
 
     public NFT(String tokenId, String contractAddress, Wallet.NetworkType network, String ownerAddress) {
@@ -128,5 +161,22 @@ public class NFT {
     public enum TokenStandard {
         ERC721,
         ERC1155
+    }
+
+    public enum ModerationStatus {
+        PENDING,
+        APPROVED,
+        REJECTED,
+        FLAGGED
+    }
+
+    public void addOwnershipHistory(NFTOwnershipHistory history) {
+        ownershipHistory.add(history);
+        history.setNft(this);
+    }
+
+    public void removeOwnershipHistory(NFTOwnershipHistory history) {
+        ownershipHistory.remove(history);
+        history.setNft(null);
     }
 }
